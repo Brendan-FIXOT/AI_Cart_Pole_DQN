@@ -5,21 +5,28 @@ import torch.optim as optim
 from model import NeuralNetwork
 from collections import deque
 import random
+from tqdm import tqdm
 
 class Agent :
-    def __init__(self, nn, epsilon, buffer_size, batch_size) :
+    def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_decay=0.995, gamma=0.99) :
         self.nn = NeuralNetwork()
-        self.epsilon = epsilon  # Probabilité d'exploration
+        self.epsilon = epsilon  # Probabilité d'exploration initiale
+        self.epsilon_min = epsilon_min  # Valeur minimale d'epsilon
+        self.epsilon_decay = epsilon_decay  # Facteur de décroissance de epsilon
         self.memory = deque(maxlen=buffer_size)
-        loss_fct = torch.nn.MSELoss()
+        self.batch_size = batch_size
+        self.gamma = gamma
+        
+        self.optimizer = optim.Adam(self.nn.parameters(), lr=0.001)
+        
+        self.loss_fct = torch.nn.MSELoss()
         
     def getaction(self, state) :
         if np.random.rand() < self.epsilon :
             return np.random.choice([0,1]) # exploration
         else : 
             with torch.no_grad() : # torch.no_grad pour éviter de taper dans la mémoire inutilement (car pas de backward ici)
-                state_tensor = torch.tensor(state, dtype=torch.float32)  # Conversion en Tensor
-                Q_values = self.nn.forward(state_tensor)
+                Q_values = self.nn.forward(state) # state déjà passer en tensor
             action = int(np.argmax(Q_values)) # Pas np.max, car ici on veut l'index (0 ou 1). Besoin du int, sinon action serait un tensor
             return action # Pas de rétropropagation tout de suite, car on veut la récompense associé à l'action
         
@@ -27,7 +34,7 @@ class Agent :
         self.memory.append((state, action, reward, next_state, done))
         
     def learn(self) :
-        batch = random(self.memory, self.batch_size)
+        batch = random.sample(self.memory, self.batch_size)
         
         states, actions, rewards, next_states, dones = zip(*batch)
         
@@ -48,3 +55,51 @@ class Agent :
         self.optimizer.zero_grad() # Réinitialise les gradients
         loss.backward() # Rétropropagation
         self.optimizer.step() # Mise à jour des poids
+        
+    def train(self, env, episodes) :
+        for episode in tqdm(range(episodes), desc="Entraînement", ncols=100, ascii=True):
+        
+            state = torch.tensor(env.reset(), dtype=torch.float32)
+            done = False
+            
+            while not done :
+                action = self.getaction(state)
+                next_state, reward, done = env.step(action)
+                
+                next_state = torch.tensor(next_state, dtype=torch.float32)
+                
+                self.store_transition(state, action, reward, next_state, done) # Storage de la transition
+                    
+                if len(self.memory) > 1000 :
+                    self.learn()
+                
+                state = next_state
+                
+            # Décroître epsilon à chaque épisode
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_decay  # Réduire epsilon progressivement
+            #print(f"Épisode {episode + 1}/{episodes}, Epsilon: {self.epsilon:.4f}")
+                
+    
+    def test_agent(self, env, testepisodes):
+        total_rewards = []  # Liste pour enregistrer les récompenses totales obtenues par l'agent
+
+        for episode in range(testepisodes):
+            state = torch.tensor(env.reset(), dtype=torch.float32)  # Convertir en tensor
+            done = False
+            total_reward = 0
+
+            while not done:
+                action = self.getaction(state)  # L'agent choisit une action avec la politique apprise
+                next_state, reward, done = env.step(action)
+                next_state = torch.tensor(next_state, dtype=torch.float32)
+                total_reward += reward 
+                state = next_state
+
+            # Enregistrer la récompense totale pour cet épisode
+            total_rewards.append(total_reward)
+            print(f"Épisode {episode+1}/{testepisodes} - Récompense totale : {total_reward}")
+
+        # Moyenne des récompenses sur tous les épisodes de test
+        avg_reward = sum(total_rewards) / testepisodes
+        print(f"\nRécompense moyenne sur {testepisodes} épisodes de test : {avg_reward}")
