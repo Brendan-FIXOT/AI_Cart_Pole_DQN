@@ -38,6 +38,9 @@ We used the following hyperparameters for training the model:
 ### Performance Metrics
 - **Total Reward**: Tracked during training to measure progress.
 
+### Best model
+- **model1000v4**: The average total reward for 100 tests was 517.6. Training consisted of 1000 episodes. There are other models where the training was longer, notably 3000 episodes, but the models were always worse than those of 1000 episodes. This is because the DQN without optimisation is quite unstable.
+
 ## Getting Started
 
 ### Prerequisites

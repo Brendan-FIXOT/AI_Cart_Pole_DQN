@@ -8,11 +8,11 @@ import random
 from tqdm import tqdm
 
 class Agent :
-    def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_decay=0.995, gamma=0.99) :
+    def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_max = 0.9, gamma=0.99) :
         self.nn = NeuralNetwork()
         self.epsilon = epsilon  # Probabilité d'exploration initiale
         self.epsilon_min = epsilon_min  # Valeur minimale d'epsilon
-        self.epsilon_decay = epsilon_decay  # Facteur de décroissance de epsilon
+        self.epsilon_max = epsilon_max  # Valeur maximale d'epsilon
         self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
         self.gamma = gamma
@@ -77,19 +77,20 @@ class Agent :
                 
             # Décroître epsilon à chaque épisode
             if self.epsilon > self.epsilon_min:
-                self.epsilon *= self.epsilon_decay  # Réduire epsilon progressivement
+                self.epsilon = self.epsilon_max - (episode/episodes)  # Réduire epsilon progressivement
             #print(f"Épisode {episode + 1}/{episodes}, Epsilon: {self.epsilon:.4f}")
                 
     
     def test_agent(self, env, testepisodes):
         total_rewards = []  # Liste pour enregistrer les récompenses totales obtenues par l'agent
+        self.epsilon = 0
 
         for episode in range(testepisodes):
             state = torch.tensor(env.reset(), dtype=torch.float32)  # Convertir en tensor
             done = False
             total_reward = 0
 
-            while not done:
+            while not done :
                 action = self.getaction(state)  # L'agent choisit une action avec la politique apprise
                 next_state, reward, done = env.step(action)
                 next_state = torch.tensor(next_state, dtype=torch.float32)
