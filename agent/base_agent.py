@@ -4,25 +4,32 @@ import torch.nn.functional as F
 import torch.optim as optim
 from tqdm import tqdm
 
-class NeuralNetwork(nn.Module) :
-    def __init__(self) :
+class NeuralNetwork(nn.Module):
+    def __init__(self, input_dim=4, hidden_dim=128, output_dim=2, mode="dqn", optimizer=optim.Adam, lr=1e-3):
         super(NeuralNetwork, self).__init__()
-        self.fc1 = nn.Linear(4, 10)  # Input layer (4 inputs -> 10 neurons)
-        self.fc2 = nn.Linear(10, 10)  # Couche caché (10 -> 10 neuronnes)
-        self.fc3 = nn.Linear(10,2)  # Couche de sortie (10 -> 2 choix)
-        self.optimizer = optim.Adam(self.parameters(), lr=0.01)
-
-    def relu(self, x) :
-        return F.relu(x)
+        self.mode = mode
+        
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, output_dim)
+        self.optimizer = optimizer(self.parameters(), lr=lr)
     
-    def forward(self, x) :
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         x = self.fc3(x)
-        return x
+
+        if self.mode == "dqn":
+            return x  # Return raw Q-values
+        elif self.mode == "actor":
+            return F.softmax(x, dim=-1) # Apply softmax to get action probabilities
+        elif self.mode == "critic":
+            return x # Return a scalar value for the state
+        else:
+            raise ValueError(f"Unknown mode: {self.mode}")
 
 class Common_Methods :
-    def __init__(self, algo="dqn"):
+    def __init__(self, algo):
         self.algo = algo  # on choisit "dqn" ou "A2C"
     
     # ===============================
@@ -37,19 +44,24 @@ class Common_Methods :
             while not done :
                 if self.algo == "dqn" :
                     action = self.getaction_dqn(state)
-                    
                     next_state, reward, done = env.step(action)
-                    
                     next_state = torch.tensor(next_state, dtype=torch.float32)
-                    
                     self.store_transition_dqn(state, action, reward, next_state, done) # Storage de la transition
-                    
                     if len(self.memory) > 1000 :
                         self.learn_dqn()
+                    state = next_state
                 elif self.algo == "A2C" :
-                    pass # À implémenter plus tard
-                
-                state = next_state
+                    action, log_prob, value = self.getaction_a2c(state)
+                    next_state, reward, done = env.step(action)
+                    next_state = torch.tensor(next_state, dtype=torch.float32)
+                    self.rewards.append(reward)
+                    self.log_probs.append(log_prob)
+                    self.values.append(value)
+                    state = next_state
+                    if done :
+                        _, _, next_value = self.getaction_a2c(next_state) # Valeur du prochain état
+                        self.update_a2c(torch.tensor(self.rewards, dtype=torch.float32), torch.stack(self.log_probs), torch.stack(self.values), next_value, torch.tensor(done, dtype=torch.float32), next_state)
+                        self.rewards, self.log_probs, self.values = [], [], [] # Réinitialisation des listes pour le prochain épisode
                 
             # Décroître epsilon à chaque épisode
             if self.algo == "dqn" and self.epsilon > self.epsilon_min:
@@ -75,7 +87,7 @@ class Common_Methods :
                 if self.algo == "dqn" :
                     action = self.getaction_dqn(state)  # L'agent choisit une action avec la politique apprise
                 elif self.algo == "A2C" :
-                    pass # À implémenter plus tard
+                    action, _, _ = self.getaction_a2c(state)  # L'agent choisit une action avec la politique apprise
                 
                 next_state, reward, done = env.step(action)
                 next_state = torch.tensor(next_state, dtype=torch.float32)
