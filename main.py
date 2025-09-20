@@ -1,7 +1,8 @@
 import numpy as np
 from environment import CartPoleEnv
-from agent import Agent
-from agent import NeuralNetwork
+from agent.dqn_agent import DQNAgent
+from agent.base_agent import NeuralNetwork
+from agent.base_agent import Common_Methods
 from interface import Interface
 import torch
 import warnings
@@ -24,7 +25,7 @@ def main() :
                                                                                                                                                                                                                                                                                                                                                                                                                    
 if __name__ == "__main__":
     nn = NeuralNetwork()
-    agent = Agent(nn, buffer_size=10000, batch_size=64, epsilon=0.9)  # L'agent
+    agent = DQNAgent(nn, buffer_size=10000, batch_size=64, epsilon=0.9)  # L'agent
     interface = Interface()
     env = CartPoleEnv()  # Initialiser l'environnement
     
