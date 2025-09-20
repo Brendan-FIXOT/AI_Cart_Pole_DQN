@@ -13,7 +13,8 @@ class CartPoleEnv:
 
     def step(self, action):
         if not self.done:
-            self.state, reward, self.done, truncated, _ = self.env.step(action)
+            self.state, reward, finished, truncated, _ = self.env.step(action)
+            self.done = bool(finished or truncated)
             return self.state, reward, self.done
         else:
             return None, 0, True

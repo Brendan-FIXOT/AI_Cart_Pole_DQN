@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import numpy as np
 from tqdm import tqdm
 
 class NeuralNetwork(nn.Module):
@@ -35,38 +36,53 @@ class Common_Methods :
     # ===============================
     # Common methods
     # ===============================
-    def train(self, env, episodes) :
+    def train(self, env, episodes):
         for episode in tqdm(range(episodes), desc="Entraînement", ncols=100, ascii=True):
-        
-            state = torch.tensor(env.reset(), dtype=torch.float32)
+            state = env.reset()
             done = False
-            
-            while not done :
-                if self.algo == "dqn" :
-                    action = self.getaction_dqn(state)
+
+            if self.algo == "A2C":
+                # reset buffers
+                self.rewards, self.log_probs, self.values = [], [], []
+
+            while not done:
+                if self.algo == "dqn":
+                    s = torch.tensor(state, dtype=torch.float32)
+                    action = self.getaction_dqn(s)
                     next_state, reward, done = env.step(action)
-                    next_state = torch.tensor(next_state, dtype=torch.float32)
-                    self.store_transition_dqn(state, action, reward, next_state, done) # Storage de la transition
-                    if len(self.memory) > 1000 :
+                    next_state_t = torch.tensor(next_state, dtype=torch.float32)
+                    self.store_transition_dqn(s, action, reward, next_state_t, done)
+                    if len(self.memory) > 1000:
                         self.learn_dqn()
                     state = next_state
-                elif self.algo == "A2C" :
+
+                elif self.algo == "A2C":
                     action, log_prob, value = self.getaction_a2c(state)
                     next_state, reward, done = env.step(action)
-                    next_state = torch.tensor(next_state, dtype=torch.float32)
-                    self.rewards.append(reward)
+
+                    # stocker les infos de ce pas
+                    self.rewards.append(float(reward))
                     self.log_probs.append(log_prob)
                     self.values.append(value)
+
                     state = next_state
-                    if done :
-                        _, _, next_value = self.getaction_a2c(next_state) # Valeur du prochain état
-                        self.update_a2c(torch.tensor(self.rewards, dtype=torch.float32), torch.stack(self.log_probs), torch.stack(self.values), next_value, torch.tensor(done, dtype=torch.float32), next_state)
-                        self.rewards, self.log_probs, self.values = [], [], [] # Réinitialisation des listes pour le prochain épisode
-                
-            # Décroître epsilon à chaque épisode
-            if self.algo == "dqn" and self.epsilon > self.epsilon_min:
-                self.epsilon = self.epsilon_max - (episode / episodes)  # Réduire epsilon progressivement
-            #print(f"Épisode {episode + 1}/{episodes}, Epsilon: {self.epsilon:.4f}")
+
+            # fin d’épisode
+            if self.algo == "dqn":
+                if self.epsilon > self.epsilon_min:
+                    self.epsilon = self.epsilon_max - (episode / episodes)
+
+            elif self.algo == "A2C":
+                if len(self.log_probs) > 0:  # sécurité
+                    rewards_t   = torch.tensor(self.rewards, dtype=torch.float32)
+                    log_probs_t = torch.stack(self.log_probs)
+                    values_t    = torch.stack(self.values)
+                    bootstrap_value = torch.tensor(0.0, dtype=torch.float32)  # CartPole -> fin terminale
+
+                    self.update_a2c(rewards_t, log_probs_t, values_t, bootstrap_value)
+
+                # reset buffers
+                self.rewards, self.log_probs, self.values = [], [], []
                 
     # ===============================
     # Test methods
@@ -75,24 +91,23 @@ class Common_Methods :
         total_rewards = []  # Liste pour enregistrer les récompenses totales obtenues par l'agent
         if self.algo == "dqn" :
             self.epsilon = 0 # exploitation seulement pendant les tests
-        elif self.algo == "A2C" :
-            pass # À implémenter plus tard
 
         for episode in range(testepisodes):
-            state = torch.tensor(env.reset(), dtype=torch.float32)  # Convertir en tensor
+            state = env.reset()
             done = False
             total_reward = 0
 
             while not done :
                 if self.algo == "dqn" :
-                    action = self.getaction_dqn(state)  # L'agent choisit une action avec la politique apprise
+                    s = torch.tensor(state, dtype=torch.float32)
+                    action = self.getaction_dqn(s)
                 elif self.algo == "A2C" :
-                    action, _, _ = self.getaction_a2c(state)  # L'agent choisit une action avec la politique apprise
+                    s = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+                    probs = self.nna(s).squeeze(0).detach().numpy()
+                    action = int(np.argmax(probs))
                 
-                next_state, reward, done = env.step(action)
-                next_state = torch.tensor(next_state, dtype=torch.float32)
-                total_reward += reward 
-                state = next_state
+                state, reward, done = env.step(action)
+                total_reward += reward
 
             # Enregistrer la récompense totale pour cet épisode
             total_rewards.append(total_reward)

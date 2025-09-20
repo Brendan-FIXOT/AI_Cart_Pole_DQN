@@ -12,7 +12,7 @@ class A2CAgent(Common_Methods):
         self.log_probs = []
         self.values = []
         self.rewards = []
-        self.gamma = gamma  # Discount factor
+        self.gamma = gamma
         
     def getaction_a2c(self, state):
         state = torch.FloatTensor(state).unsqueeze(0)  # Ajouter une dimension batch
@@ -23,16 +23,24 @@ class A2CAgent(Common_Methods):
         value = self.nnc(state)
         return action.item(), log_prob, value
     
-    def update_a2c(self, rewards, log_probs, values, next_value, dones, next_state):
-        next_state = torch.FloatTensor(next_state).unsqueeze(0)
+    def update_a2c(self, rewards, log_probs, values, bootstrap_value):
+        """next_state = torch.FloatTensor(next_state).unsqueeze(0)
         with torch.no_grad():
             next_value = self.nnc(next_state)  # Valeur du prochain état sans gradient
     
-        target = rewards + (1 - dones) * self.gamma * next_value  # target = r + γV(s')
-        advantage = target - values  # Avantage = target - V(s)
+        target = rewards + (1 - dones) * self.gamma * next_value  # target = r + γV(s')"""
+        
+        T = rewards.shape[0]
+        returns = torch.zeros(T, dtype=torch.float32)
+        running = bootstrap_value.detach()
+        for t in reversed(range(T)):
+            running = rewards[t] + self.gamma * running
+            returns[t] = running
+            
+        advantage = returns - values
         
         # Update Critic
-        critic_loss = self.loss_fct(target, values)
+        critic_loss = self.loss_fct(values, returns)
         self.nnc.optimizer.zero_grad()
         critic_loss.backward()
         self.nnc.optimizer.step()
