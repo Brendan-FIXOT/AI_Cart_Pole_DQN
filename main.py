@@ -1,7 +1,7 @@
 import numpy as np
 from environment import CartPoleEnv
 from agent import Agent
-from model import NeuralNetwork
+from agent import NeuralNetwork
 from interface import Interface
 import torch
 import warnings

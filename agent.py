@@ -1,11 +1,28 @@
 import numpy as np
 import torch
-import torch.nn
+import torch.nn as nn
 import torch.optim as optim
-from model import NeuralNetwork
+import torch.nn.functional as F
 from collections import deque
 import random
 from tqdm import tqdm
+
+class NeuralNetwork(nn.Module) :
+    def __init__(self) :
+        super(NeuralNetwork, self).__init__()
+        self.fc1 = nn.Linear(4, 10)  # Couche d'entrée (4 entrées -> 10 neurones)
+        self.fc2 = nn.Linear(10, 10)  # Couche caché (10 -> 10 neuronnes)
+        self.fc3 = nn.Linear(10,2)  # Couche de sortie (10 -> 2 choix)
+        self.optimizer = optim.Adam(self.parameters(), lr=0.01)
+
+    def relu(self, x) :
+        return F.relu(x)
+    
+    def forward(self, x) :
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 class Agent :
     def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_max = 0.9, gamma=0.99) :
