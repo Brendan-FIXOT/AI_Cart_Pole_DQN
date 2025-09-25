@@ -20,12 +20,10 @@ class NeuralNetwork(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
 
-        if self.mode == "dqn":
-            return x  # Return raw Q-values
+        if self.mode == "dqn" or self.mode == "critic" :
+            return x  # Return raw Q-values // or state values
         elif self.mode == "actor":
             return F.softmax(x, dim=-1) # Apply softmax to get action probabilities
-        elif self.mode == "critic":
-            return x # Return a scalar value for the state
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
 
@@ -66,6 +64,8 @@ class Common_Methods :
                     self.values.append(value)
 
                     state = next_state
+                elif self.algo == "ppo":
+                    pass # À implémenter après le commit
 
             # fin d’épisode
             if self.algo == "dqn":

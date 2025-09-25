@@ -24,12 +24,6 @@ class A2CAgent(Common_Methods):
         return action.item(), log_prob, value
     
     def update_a2c(self, rewards, log_probs, values, bootstrap_value):
-        """next_state = torch.FloatTensor(next_state).unsqueeze(0)
-        with torch.no_grad():
-            next_value = self.nnc(next_state)  # Valeur du prochain état sans gradient
-    
-        target = rewards + (1 - dones) * self.gamma * next_value  # target = r + γV(s')"""
-        
         T = rewards.shape[0]
         returns = torch.zeros(T, dtype=torch.float32)
         running = bootstrap_value.detach()
