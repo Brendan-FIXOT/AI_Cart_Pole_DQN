@@ -4,8 +4,9 @@ class Interface:
     def __init__(self):
         self.didtrain = False
         self.episodes = None
-        self.path_dqn = "model_dqn_saved"
-        self.path_a2c = "model_a2c_saved"
+        self.path_dqn = "model_saved/dqn/"
+        self.path_a2c = "model_saved/a2c/"
+        self.path_ppo = "model_saved/ppo/"
         self.filename = None
         self.path = None
 
@@ -14,11 +15,13 @@ class Interface:
         os.makedirs(self.path_a2c, exist_ok=True)
 
     def ask_mode(self):
-        user_input = input("Choose the agent mode - DQN or A2C (d/a): ").lower()
+        user_input = input("Choose the agent mode - DQN or A2C or PPO (d/a/p): ").lower()
         if user_input == 'd':
             return "dqn"
         elif user_input == 'a':
             return "a2c"
+        elif user_input == 'p':
+            return "ppo"
         else:
             print("Invalid input, defaulting to DQN.")
             return "dqn"
@@ -71,5 +74,26 @@ class Interface:
             self.filename = input("Enter the filename of the A2C model to load (without extension): ") + ".pth"
             self.path = os.path.join(self.path_a2c, self.filename)
             print(f"The A2C model will be loaded from: {self.path}")
+            return True
+        return False
+
+    # ---------------------------
+    # PPO
+    # ---------------------------
+    def ask_save_ppo(self):
+        user_input = input("Do you want to save the PPO model? (y/n): ").lower()
+        if user_input == 'y':
+            self.filename = input("Enter the filename to save the PPO model (without extension): ") + ".pth"
+            self.path = os.path.join(self.path_ppo, self.filename)
+            print(f"The PPO model will be saved at: {self.path}")
+            return True
+        return False
+    
+    def ask_load_ppo(self):
+        user_input = input("Do you want to load an existing PPO model? (y/n): ").lower()
+        if user_input == 'y':
+            self.filename = input("Enter the filename of the PPO model to load (without extension): ") + ".pth"
+            self.path = os.path.join(self.path_ppo, self.filename)
+            print(f"The PPO model will be loaded from: {self.path}")
             return True
         return False

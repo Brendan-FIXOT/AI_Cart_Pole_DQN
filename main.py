@@ -2,6 +2,7 @@ import numpy as np
 from environment import CartPoleEnv
 from agent.a2c_agent import A2CAgent
 from agent.dqn_agent import DQNAgent
+from agent.ppo_agent import PPOAgent
 from agent.base_agent import NeuralNetwork
 from interface import Interface
 import torch
@@ -27,7 +28,13 @@ def main():
                 os.makedirs(os.path.dirname(interface.path), exist_ok=True)
                 torch.save(agent.nna.state_dict(), interface.path.replace(".pth", "_actor.pth"))
                 torch.save(agent.nnc.state_dict(), interface.path.replace(".pth", "_critic.pth"))
-
+        
+        elif mode == "ppo":
+            if interface.ask_save_ppo():
+                os.makedirs(os.path.dirname(interface.path), exist_ok=True)
+                torch.save(agent.nna.state_dict(), interface.path.replace(".pth", "_actor.pth"))
+                torch.save(agent.nnc.state_dict(), interface.path.replace(".pth", "_critic.pth"))
+        
     # Test
     if interface.didtestfct():
         agent.test_agent(env, testepisodes=100)
@@ -38,7 +45,7 @@ def main():
 if __name__ == "__main__":
     interface = Interface()
     env = CartPoleEnv()
-    mode = interface.ask_mode()  # "dqn" ou "a2c"
+    mode = interface.ask_mode()  # "dqn" or "a2c" or "ppo"
 
     if mode == "dqn":
         agent = DQNAgent(NeuralNetwork(), buffer_size=10000, batch_size=64, epsilon=0.9)
@@ -73,4 +80,21 @@ if __name__ == "__main__":
             interface.didtrain = True
             interface.episodes = int(input("How many episodes would you like to train the model for? "))
 
+    elif mode == "ppo":
+        agent = PPOAgent(buffer_size=1024)
+        
+        if interface.ask_load_ppo():
+            try:
+                agent.nna.load_state_dict(torch.load(interface.path.replace(".pth", "_actor.pth")))
+                agent.nnc.load_state_dict(torch.load(interface.path.replace(".pth", "_critic.pth")))
+                print("Modèle PPO chargé.")
+                interface.didtrainfct()
+            except FileNotFoundError:
+                print("Modèle PPO non trouvé, démarrage du programme...")
+                interface.didtrain = True
+                interface.episodes = int(input("How many episodes would you like to train the model for? "))
+        else:
+            interface.didtrain = True
+            interface.episodes = int(input("How many episodes would you like to train the model for? "))
+    
     main()

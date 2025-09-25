@@ -64,8 +64,20 @@ class Common_Methods :
                     self.values.append(value)
 
                     state = next_state
+                    
                 elif self.algo == "ppo":
-                    pass # À implémenter après le commit
+                    action, log_prob, value = self.getaction_ppo(state)
+                    next_state, reward, done = env.step(action)
+
+                    self.store_transition_ppo(state, action, reward, done, log_prob, value)
+
+                    self.state = next_state
+                    
+                    # Update if buffer is full
+                    if len(self.memory) >= self.buffer_size:
+                        self.learn_ppo()
+                        
+                    # No need to reset env here, just need coherence in state transition
 
             # fin d’épisode
             if self.algo == "dqn":
@@ -81,6 +93,9 @@ class Common_Methods :
 
                     self.update_a2c(rewards_t, log_probs_t, values_t, bootstrap_value)
 
+            elif self.algo == "ppo":
+                pass # Nothing to do here
+            
                 # reset buffers
                 self.rewards, self.log_probs, self.values = [], [], []
                 
@@ -101,7 +116,7 @@ class Common_Methods :
                 if self.algo == "dqn" :
                     s = torch.tensor(state, dtype=torch.float32)
                     action = self.getaction_dqn(s)
-                elif self.algo == "A2C" :
+                elif self.algo == "A2C" or self.algo == "ppo":
                     s = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
                     probs = self.nna(s).squeeze(0).detach().numpy()
                     action = int(np.argmax(probs))
