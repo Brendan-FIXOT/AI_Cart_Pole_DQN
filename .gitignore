@@ -4,4 +4,3 @@ __pycache__/
 env/
 .env
 model_saved/
-assets/
