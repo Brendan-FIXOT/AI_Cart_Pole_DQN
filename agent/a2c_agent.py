@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from .base_agent import NeuralNetwork
-from .base_agent import Common_Methods
+from core.common_methods_agent import NeuralNetwork
+from core.common_methods_agent import Common_Methods
 
 class A2CAgent(Common_Methods):
     def __init__(self, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99):

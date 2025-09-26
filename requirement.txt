@@ -1,4 +1,7 @@
 torch
-gym
+gymnasium[classic-control]
 numpy
 tqdm
+pygame
+imageio
+Pillow

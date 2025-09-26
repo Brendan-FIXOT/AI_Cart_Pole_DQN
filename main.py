@@ -1,10 +1,10 @@
 import numpy as np
-from environment import CartPoleEnv
+from environment.cartpole_environment import CartPoleEnv
 from agent.a2c_agent import A2CAgent
 from agent.dqn_agent import DQNAgent
 from agent.ppo_agent import PPOAgent
-from agent.base_agent import NeuralNetwork
-from interface import Interface
+from core.common_methods_agent import NeuralNetwork
+from core.interface import Interface
 import torch
 import os
 import warnings

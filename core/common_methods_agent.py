@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
-from environment import CartPoleEnv
+from environment.cartpole_environment import CartPoleEnv
 import imageio
 
 class NeuralNetwork(nn.Module):

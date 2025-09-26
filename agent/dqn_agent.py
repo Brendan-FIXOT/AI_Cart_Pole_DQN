@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import torch.optim as optim
 from collections import deque
-from .base_agent import NeuralNetwork
-from .base_agent import Common_Methods
+from core.common_methods_agent import NeuralNetwork
+from core.common_methods_agent import Common_Methods
 import random
 
 class DQNAgent(Common_Methods):
