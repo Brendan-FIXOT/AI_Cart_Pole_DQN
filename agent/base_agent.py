@@ -69,9 +69,17 @@ class Common_Methods :
                     action, log_prob, value = self.getaction_ppo(state)
                     next_state, reward, done = env.step(action)
 
-                    self.store_transition_ppo(state, action, reward, done, log_prob, value)
+                    self.store_transition_ppo(
+                        state,
+                        action,
+                        float(reward),
+                        float(done),
+                        log_prob.detach().squeeze(),
+                        value.detach().squeeze())
 
                     self.state = next_state
+                    
+                    state = next_state
                     
                     # Update if buffer is full
                     if len(self.memory) >= self.buffer_size:

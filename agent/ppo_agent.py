@@ -17,7 +17,7 @@ class PPOAgent(Common_Methods):
         self.gamma = gamma
         
     def getaction_ppo(self, state):
-        state = torch.FloatTensor(state).unsqueeze(0)  # Ajouter une dimension batch
+        state = torch.FloatTensor(state).unsqueeze(0)
         probs = self.nna(state)
         dist = torch.distributions.Categorical(probs)
         action = dist.sample()
@@ -74,18 +74,3 @@ class PPOAgent(Common_Methods):
         
         # Do not forget to clear memory !!!
         self.memory.clear()
-
-    def collector_trajectory(self, env, buffer_size):
-        
-        env.reset()
-        
-        for _ in range(buffer_size):
-            action, log_prob, value = self.getaction_ppo(self.state)
-            next_state, reward, done = env.step(action)
-
-            self.store_transition_ppo(self.state, action, reward, done, log_prob, value)
-
-            self.state = next_state
-            
-            if done:
-                self.state = env.reset()
