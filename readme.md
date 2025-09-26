@@ -4,6 +4,11 @@ This repository contains implementations of reinforcement learning algorithms ap
 It includes **Deep Q-Network (DQN)**, **Advantage Actor-Critic (A2C)**, and **Proximal Policy Optimization (PPO)**.  
 The project demonstrates how different RL approaches can solve the same environment.
 
+# CartPole RL Agents
+
+![CartPole PPO Demo](assets/cartpoleppov2.gif)
+
+
 ## Table of Contents
 - [Project Overview](#project-overview)
 - [Getting Started](#getting-started)

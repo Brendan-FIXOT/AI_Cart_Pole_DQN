@@ -10,7 +10,6 @@ import os
 import warnings
 warnings.filterwarnings("ignore")
 
-
 def main():
     # Entraînement
     if interface.didtrain:
@@ -38,6 +37,13 @@ def main():
     # Test
     if interface.didtestfct():
         agent.test_agent(env, testepisodes=100)
+        
+    if interface.didgraphicfct():
+        interface.grahic_name = input("Enter the filename to save the graphic (without extension, default is cartpole.gif): ")
+        if interface.grahic_name:
+            interface.grahic_name += ".gif"
+        agent.graphic_agent(filename=interface.grahic_name if interface.grahic_name else "cartpole.gif")
+        print(f"Graphic saved as {interface.grahic_name if interface.grahic_name else 'cartpole.gif'}")
 
     env.close()
 

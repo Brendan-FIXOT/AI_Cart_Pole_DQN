@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 from tqdm import tqdm
+from environment import CartPoleEnv
+import imageio
 
 class NeuralNetwork(nn.Module):
     def __init__(self, input_dim=4, hidden_dim=128, output_dim=2, mode="dqn", optimizer=optim.Adam, lr=1e-3):
@@ -139,3 +141,38 @@ class Common_Methods :
         # Moyenne des récompenses sur tous les épisodes de test
         avg_reward = sum(total_rewards) / testepisodes
         print(f"\nRécompense moyenne sur {testepisodes} épisodes de test : {avg_reward}")
+        
+    def graphic_agent(self, filename="cartpole.gif"):
+        render_env = CartPoleEnv(render_mode="rgb_array")
+        
+        if self.algo == "dqn" :
+            self.epsilon = 0 # exploitation seulement pendant les tests
+
+        state = render_env.reset()
+        done = False
+        total_reward = 0
+        frames = []
+
+        # On estime un nombre max de frames pour la barre de progression (ex: 500)
+        max_steps = 500
+        with tqdm(total=max_steps, desc="Création GIF", ncols=100, ascii=True) as pbar:
+            step = 0
+            while not done and step < max_steps:
+                render_env.render()
+                if self.algo == "dqn" :
+                    s = torch.tensor(state, dtype=torch.float32)
+                    action = self.getaction_dqn(s)
+                elif self.algo == "A2C" or self.algo == "ppo":
+                    s = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+                    probs = self.nna(s).squeeze(0).detach().numpy()
+                    action = int(np.argmax(probs))
+
+                frame = render_env.render()
+                frames.append(frame)
+                state, reward, done = render_env.step(action)
+                total_reward += reward
+                step += 1
+                pbar.update(1)
+            
+        render_env.close()
+        imageio.mimsave(filename, frames, fps=30)

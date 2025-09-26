@@ -20,7 +20,7 @@ class CartPoleEnv:
             return None, 0, True
 
     def render(self):
-        self.env.render()
+        return self.env.render()
 
     def close(self):
         self.env.close()

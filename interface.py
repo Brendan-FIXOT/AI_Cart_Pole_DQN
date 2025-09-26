@@ -7,6 +7,7 @@ class Interface:
         self.path_dqn = "model_saved/dqn/"
         self.path_a2c = "model_saved/a2c/"
         self.path_ppo = "model_saved/ppo/"
+        self.grahic_name = None
         self.filename = None
         self.path = None
 
@@ -34,6 +35,9 @@ class Interface:
 
     def didtestfct(self):
         return input("Do you want to test the model? (y/n): ").lower() == 'y'
+
+    def didgraphicfct(self):
+        return input("Do you want to create a graphic of the agent's performance? (y/n): ").lower() == 'y'
 
     # ---------------------------
     # DQN
