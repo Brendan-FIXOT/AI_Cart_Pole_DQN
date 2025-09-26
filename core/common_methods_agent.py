@@ -142,7 +142,7 @@ class Common_Methods :
         avg_reward = sum(total_rewards) / testepisodes
         print(f"\nRécompense moyenne sur {testepisodes} épisodes de test : {avg_reward}")
         
-    def graphic_agent(self, filename="cartpole.gif"):
+    def graphic_agent(self, filename):
         render_env = CartPoleEnv(render_mode="rgb_array")
         
         if self.algo == "dqn" :
@@ -154,7 +154,7 @@ class Common_Methods :
         frames = []
 
         # On estime un nombre max de frames pour la barre de progression (ex: 500)
-        max_steps = 500
+        max_steps = 200
         with tqdm(total=max_steps, desc="Création GIF", ncols=100, ascii=True) as pbar:
             step = 0
             while not done and step < max_steps:
@@ -175,4 +175,4 @@ class Common_Methods :
                 pbar.update(1)
             
         render_env.close()
-        imageio.mimsave(filename, frames, fps=30)
+        imageio.mimsave(filename, frames, fps=30, loop=0)

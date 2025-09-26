@@ -6,7 +6,7 @@ The project demonstrates how different RL approaches can solve the same environm
 
 # CartPole RL Agents
 
-![CartPole PPO Demo](assets/cartpoleppov2.gif)
+![CartPole PPO Demo](assets/cartpolePPOv2.gif)
 
 
 ## Table of Contents
