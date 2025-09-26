@@ -6,7 +6,7 @@ from .base_agent import Common_Methods
 import random
 
 class PPOAgent(Common_Methods):
-    def __init__(self, buffer_size=1024, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2):
+    def __init__(self, buffer_size=512, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2):
         super().__init__(algo="ppo")
         self.nna = NeuralNetwork(hidden_dim=hidden_dim, output_dim=2, mode="actor", lr=actor_lr)
         self.nnc = NeuralNetwork(hidden_dim=hidden_dim, output_dim=1, mode="critic", lr=critic_lr)
