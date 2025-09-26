@@ -47,7 +47,9 @@ class PPOAgent(Common_Methods):
         returns = torch.tensor(returns, dtype=torch.float32)
 
         # Calculate advantages
-        advantages = returns - values.detach()
+        advantages = returns - values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
         
         # New log probs and values
         probs = self.nna(states)
@@ -57,8 +59,8 @@ class PPOAgent(Common_Methods):
         
         # PPO loss
         ratio = torch.exp(new_log_probs - old_log_probs)
-        surr1 = ratio * advantages
-        surr2 = torch.clamp(ratio, 1 - self.clip_value, 1 + self.clip_value) * advantages
+        surr1 = ratio * advantages.detach()
+        surr2 = torch.clamp(ratio, 1 - self.clip_value, 1 + self.clip_value) * advantages.detach()
         
         actor_loss = -torch.min(surr1, surr2).mean() # PPO objective (to maximize)
         critic_loss = self.loss_fct(new_values, returns)

@@ -31,7 +31,8 @@ class A2CAgent(Common_Methods):
             running = rewards[t] + self.gamma * running
             returns[t] = running
             
-        advantage = returns - values
+        advantages = returns - values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         
         # Update Critic
         critic_loss = self.loss_fct(values, returns)
@@ -40,7 +41,7 @@ class A2CAgent(Common_Methods):
         self.nnc.optimizer.step()
         
         # Update Actor
-        actor_loss = -(log_probs * advantage.detach()).mean()  # On détache l'avantage pour ne pas propager le gradient à travers le critic
+        actor_loss = -(log_probs * advantages.detach()).mean()  # On détache l'avantage pour ne pas propager le gradient à travers le critic
         self.nna.optimizer.zero_grad()
         actor_loss.backward()
         self.nna.optimizer.step()
