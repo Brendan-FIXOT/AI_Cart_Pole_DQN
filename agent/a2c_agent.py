@@ -4,10 +4,10 @@ from core.common_methods_agent import NeuralNetwork
 from core.common_methods_agent import Common_Methods
 
 class A2CAgent(Common_Methods):
-    def __init__(self, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99):
+    def __init__(self, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99):
         super().__init__(algo="A2C")
-        self.nna = NeuralNetwork(hidden_dim=hidden_dim, output_dim=2, mode="actor", lr=actor_lr)  # Actor outputs probabilities for each action
-        self.nnc = NeuralNetwork(hidden_dim=hidden_dim, output_dim=1, mode="critic", lr=critic_lr)  # Critic outputs a single value
+        self.nna = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=2, mode="actor", lr=actor_lr)  # Actor outputs probabilities for each action
+        self.nnc = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=1, mode="critic", lr=critic_lr)  # Critic outputs a single value
         self.loss_fct = torch.nn.MSELoss()
         self.log_probs = []
         self.values = []
