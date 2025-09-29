@@ -85,7 +85,7 @@ class Common_Methods :
                     
                     # Update if buffer is full
                     if len(self.memory) >= self.buffer_size:
-                        self.learn_ppo()
+                        self.learn_ppo(state) # We pass the last state for bootstrap
                         
                     # No need to reset env here, just need coherence in state transition
 

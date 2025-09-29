@@ -6,15 +6,16 @@ from core.common_methods_agent import Common_Methods
 import random
 
 class PPOAgent(Common_Methods):
-    def __init__(self, buffer_size=512, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2):
+    def __init__(self, buffer_size=512, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95):
         super().__init__(algo="ppo")
         self.nna = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=2, mode="actor", lr=actor_lr)
         self.nnc = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=1, mode="critic", lr=critic_lr)
         self.loss_fct = torch.nn.MSELoss()
         self.buffer_size = buffer_size
         self.memory = deque(maxlen=self.buffer_size)
-        self.clip_value = clip_value
         self.gamma = gamma
+        self.clip_value = clip_value
+        self.lambda_gae = lambda_gae
         
     @torch.no_grad() # We don't want to compute gradients when selecting actions, because we are not training
     def getaction_ppo(self, state):
@@ -29,7 +30,7 @@ class PPOAgent(Common_Methods):
     def store_transition_ppo(self, state, action, reward, done, log_prob_old, value_old):
         self.memory.append((state, action, reward, done, log_prob_old, value_old))
         
-    def compute_gae(self, rewards, values, dones, next_value, lam=0.95):
+    def compute_gae(self, rewards, values, dones, next_value):
         T = len(rewards)
         advantages = torch.zeros(T, dtype=torch.float32)
         
@@ -38,7 +39,7 @@ class PPOAgent(Common_Methods):
         
         for t in reversed(range(T)):
             delta = rewards[t] + self.gamma * values[t + 1] * (1 - dones[t]) - values[t]
-            gae = delta + self.gamma * lam * gae * (1 - dones[t])
+            gae = delta + self.gamma * self.lambda_gae * gae * (1 - dones[t])
             advantages[t] = gae
             
         returns = advantages + values[:-1] # R_t = A_t + V(s_t)
@@ -46,7 +47,7 @@ class PPOAgent(Common_Methods):
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8) # Normalization
         return advantages, returns
         
-    def learn_ppo(self):        
+    def learn_ppo(self, last_state):        
         states, actions, rewards, dones, old_log_probs, values = zip(*self.memory) # Learning on a complete rollout
 
         states = torch.tensor(np.array(states), dtype=torch.float32)
@@ -55,6 +56,12 @@ class PPOAgent(Common_Methods):
         dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1)
         old_log_probs = torch.stack(old_log_probs)
         values = torch.stack(values).squeeze()
+        
+        with torch.no_grad():
+            last_value = self.nnc(last_state).squeeze(-1)
+
+        next_value = last_value * (1.0 - dones[-1]) # if last state is done, so last value is 0
+        advantages, returns = self.compute_gae(rewards, values, dones, next_value) # Bootstrap value for the last state
         
         # Compute returns and advantages
         advantages, returns = self.compute_gae(rewards, values, dones, next_value=0)
