@@ -52,8 +52,8 @@ class PPOAgent(Common_Methods):
 
         states = torch.tensor(np.array(states), dtype=torch.float32)
         actions = torch.tensor(actions, dtype=torch.int64)
-        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
-        dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1)
+        rewards = torch.tensor(rewards, dtype=torch.float32)
+        dones = torch.tensor(dones, dtype=torch.float32) # unsqueeze not needed, already 1D for the compute_gae, dones and rewards are not used in the loss directly
         old_log_probs = torch.stack(old_log_probs)
         values = torch.stack(values).squeeze()
         
