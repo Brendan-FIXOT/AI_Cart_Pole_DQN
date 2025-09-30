@@ -6,7 +6,7 @@ from core.common_methods_agent import Common_Methods
 import random
 
 class PPOAgent(Common_Methods):
-    def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=True, shuffle=True):
+    def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=3e-4, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=True, shuffle=True):
         super().__init__(algo="ppo")
         if torch.cuda.is_available(): # CUDA NVIDIA
             self.device = torch.device("cuda")
@@ -67,7 +67,7 @@ class PPOAgent(Common_Methods):
     def learn_ppo(self, last_state):        
         states, actions, rewards, dones, old_log_probs, values = zip(*self.memory) # Learning on a complete rollout
 
-        states = torch.tensor(np.array(states), dtype=torch.float32, device=self.device)
+        states = torch.as_tensor(states, dtype=torch.float32, device=self.device)
         actions = torch.tensor(actions, dtype=torch.int64, device=self.device)
         rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device)
         dones = torch.tensor(dones, dtype=torch.float32, device=self.device) # unsqueeze not needed, already 1D for the compute_gae, dones and rewards are not used in the loss directly
@@ -79,20 +79,20 @@ class PPOAgent(Common_Methods):
         with torch.no_grad():
             last_value = self.nnc(last_state).squeeze(-1)
 
-        next_value = last_value * (1.0 - dones[-1]) # if last state is done, so last value is 0
+        next_value = 0 if dones[-1] else last_value # if last state is done, so last value is 0
         advantages, returns = self.compute_gae(rewards, values, dones, next_value) # Bootstrap value for the last state
         
-        T = len(rewards) # To ensure we go through the entire trajectory, not just with buffer_size
+        size = len(rewards) # To ensure we go through the entire trajectory, not just with buffer_size
         
         for epoch in range(self.nb_epochs):
             # indices shuffle or not
             if self.shuffle:
-                idx = torch.randperm(T)
+                idx = torch.randperm(size)
             else:
-                idx = torch.arange(T)
+                idx = torch.arange(size)
                 
-            for start in range(0, T, self.batch_size):
-                end = start + self.batch_size
+            for start in range(0, size, self.batch_size):
+                end = min(start + self.batch_size, size)
                 batch_idx = idx[start:end]
 
                 batch_states = states[batch_idx]

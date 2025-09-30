@@ -4,7 +4,7 @@ from core.common_methods_agent import NeuralNetwork
 from core.common_methods_agent import Common_Methods
 
 class A2CAgent(Common_Methods):
-    def __init__(self, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99):
+    def __init__(self, input_dim=4, hidden_dim=128, actor_lr=3e-4, critic_lr=1e-3, gamma=0.99):
         super().__init__(algo="a2c")
         if torch.cuda.is_available(): # CUDA NVIDIA
             self.device = torch.device("cuda")

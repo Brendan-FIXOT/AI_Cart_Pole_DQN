@@ -48,7 +48,7 @@ class DQNAgent(Common_Methods):
         
         states, actions, rewards, next_states, dones = zip(*batch)
         
-        states = torch.tensor(np.array(states), dtype=torch.float32, device=self.device)
+        states = torch.as_tensor(states, dtype=torch.float32, device=self.device)
         actions = torch.tensor(actions, dtype=torch.int64, device=self.device).unsqueeze(1)
         rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device).unsqueeze(1)
         next_states = torch.tensor(np.array(next_states), dtype=torch.float32, device=self.device)
