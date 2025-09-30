@@ -6,7 +6,7 @@ from core.common_methods_agent import Common_Methods
 import random
 
 class PPOAgent(Common_Methods):
-    def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=False, shuffle=True):
+    def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=True, shuffle=True):
         super().__init__(algo="ppo")
         if torch.cuda.is_available(): # CUDA NVIDIA
             self.device = torch.device("cuda")
@@ -115,8 +115,8 @@ class PPOAgent(Common_Methods):
                 # Optional: entropy bonus for exploration
                 if self.ent_bonus:
                     entropy = dist.entropy().mean()
-                    actor_loss = -torch.min(surr1, surr2).mean() - self.c1 * entropy
-                    critic_loss = self.c2 * self.loss_fct(new_values, batch_returns)
+                    actor_loss = -torch.min(surr1, surr2).mean() - self.c2 * entropy
+                    critic_loss = self.c1 * self.loss_fct(new_values, batch_returns)
                 else:
                     actor_loss = -torch.min(surr1, surr2).mean()
                     critic_loss = self.c1 * self.loss_fct(new_values, batch_returns)
