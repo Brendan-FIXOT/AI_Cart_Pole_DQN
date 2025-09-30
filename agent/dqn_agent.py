@@ -9,7 +9,14 @@ import random
 class DQNAgent(Common_Methods):
     def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_max = 0.9, gamma=0.99, lr=1e-4) :
         super().__init__(algo="dqn")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available(): # CUDA NVIDIA
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():  # MAC M1/M2/M3
+            self.device = torch.device("mps")
+        #elif torch.version.hip is not None:     # AMD ROCm
+            #self.device = torch.device("hip") # Uniquement sur Linux
+        else:
+            self.device = torch.device("cpu")
         self.nn = NeuralNetwork(lr=lr)
         self.nn.to(self.device)
         self.epsilon = epsilon  # Probabilité d'exploration initiale

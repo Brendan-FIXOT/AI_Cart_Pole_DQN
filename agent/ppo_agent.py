@@ -8,7 +8,14 @@ import random
 class PPOAgent(Common_Methods):
     def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=False, shuffle=True):
         super().__init__(algo="ppo")
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available(): # CUDA NVIDIA
+            self.device = torch.device("cuda")
+        elif torch.backends.mps.is_available():  # MAC M1/M2/M3
+            self.device = torch.device("mps")
+        #elif torch.version.hip is not None:     # AMD ROCm
+            #self.device = torch.device("hip") # Uniquement sur Linux
+        else:
+            self.device = torch.device("cpu")
         self.nna = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=2, mode="actor", lr=actor_lr)
         self.nnc = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=1, mode="critic", lr=critic_lr)
         self.nna.to(self.device)
@@ -40,6 +47,7 @@ class PPOAgent(Common_Methods):
         self.memory.append((state, action, reward, done, log_prob_old, value_old))
         
     def compute_gae(self, rewards, values, dones, next_value):
+        print(self.device)
         T = len(rewards)
         advantages = torch.zeros(T, dtype=torch.float32, device=self.device)
         
