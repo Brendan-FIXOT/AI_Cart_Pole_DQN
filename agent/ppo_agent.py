@@ -82,14 +82,16 @@ class PPOAgent(Common_Methods):
         next_value = last_value * (1.0 - dones[-1]) # if last state is done, so last value is 0
         advantages, returns = self.compute_gae(rewards, values, dones, next_value) # Bootstrap value for the last state
         
+        T = len(rewards) # To ensure we go through the entire trajectory, not just with buffer_size
+        
         for epoch in range(self.nb_epochs):
             # indices shuffle or not
             if self.shuffle:
-                idx = torch.randperm(self.buffer_size)
+                idx = torch.randperm(T)
             else:
-                idx = torch.arange(self.buffer_size)
+                idx = torch.arange(T)
                 
-            for start in range(0, self.buffer_size, self.batch_size):
+            for start in range(0, T, self.batch_size):
                 end = start + self.batch_size
                 batch_idx = idx[start:end]
 
