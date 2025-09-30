@@ -31,7 +31,7 @@ class NeuralNetwork(nn.Module):
 
 class Common_Methods :
     def __init__(self, algo):
-        self.algo = algo  # on choisit "dqn" ou "A2C"
+        self.algo = algo  # we choose dqn, a2c or ppo
     
     # ===============================
     # Common methods
@@ -40,27 +40,23 @@ class Common_Methods :
         for episode in tqdm(range(episodes), desc="Entraînement", ncols=100, ascii=True):
             state = env.reset()
             done = False
-
-            if self.algo == "A2C":
-                # reset buffers
-                self.rewards, self.log_probs, self.values = [], [], []
-
+               
             while not done:
                 if self.algo == "dqn":
-                    s = torch.tensor(state, dtype=torch.float32)
+                    s = torch.tensor(state, dtype=torch.float32, device=self.device)
                     action = self.getaction_dqn(s)
                     next_state, reward, done = env.step(action)
-                    next_state_t = torch.tensor(next_state, dtype=torch.float32)
+                    next_state_t = torch.tensor(next_state, dtype=torch.float32, device=self.device)
                     self.store_transition_dqn(s, action, reward, next_state_t, done)
                     if len(self.memory) > 1000:
                         self.learn_dqn()
                     state = next_state
 
-                elif self.algo == "A2C":
+                elif self.algo == "a2c":
                     action, log_prob, value = self.getaction_a2c(state)
                     next_state, reward, done = env.step(action)
 
-                    # stocker les infos de ce pas
+                    # store the information of this step
                     self.rewards.append(float(reward))
                     self.log_probs.append(log_prob)
                     self.values.append(value)
@@ -89,25 +85,27 @@ class Common_Methods :
                         
                     # No need to reset env here, just need coherence in state transition
 
-            # fin d’épisode
+            # end of episode
             if self.algo == "dqn":
                 if self.epsilon > self.epsilon_min:
                     self.epsilon = self.epsilon_max - (episode / episodes)
 
-            elif self.algo == "A2C":
-                if len(self.log_probs) > 0:  # sécurité
-                    rewards_t   = torch.tensor(self.rewards, dtype=torch.float32)
-                    log_probs_t = torch.stack(self.log_probs)
-                    values_t    = torch.stack(self.values)
-                    bootstrap_value = torch.tensor(0.0, dtype=torch.float32)  # CartPole -> fin terminale
+            elif self.algo == "a2c":
+                if len(self.log_probs) > 0:
+                    rewards_t   = torch.tensor(self.rewards, dtype=torch.float32, device=self.device)
+                    log_probs_t = torch.stack(self.log_probs).squeeze(-1).to(self.device)
+                    values_t    = torch.stack(self.values).squeeze(-1).to(self.device)
+                    bootstrap_value = torch.tensor(0.0, dtype=torch.float32, device=self.device)  # CartPole -> end terminal state value = 0
 
                     self.update_a2c(rewards_t, log_probs_t, values_t, bootstrap_value)
+                    
+                    # reset buffers
+                    self.rewards, self.log_probs, self.values = [], [], []
 
             elif self.algo == "ppo":
                 pass # Nothing to do here
             
-                # reset buffers
-                self.rewards, self.log_probs, self.values = [], [], []
+                
                 
     # ===============================
     # Test methods
@@ -124,10 +122,10 @@ class Common_Methods :
 
             while not done :
                 if self.algo == "dqn" :
-                    s = torch.tensor(state, dtype=torch.float32)
+                    s = torch.tensor(state, dtype=torch.float32, device=self.device)
                     action = self.getaction_dqn(s)
-                elif self.algo == "A2C" or self.algo == "ppo":
-                    s = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+                elif self.algo == "a2c" or self.algo == "ppo":
+                    s = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
                     probs = self.nna(s).squeeze(0).detach().numpy()
                     action = int(np.argmax(probs))
                 
@@ -162,7 +160,7 @@ class Common_Methods :
                 if self.algo == "dqn" :
                     s = torch.tensor(state, dtype=torch.float32)
                     action = self.getaction_dqn(s)
-                elif self.algo == "A2C" or self.algo == "ppo":
+                elif self.algo == "a2c" or self.algo == "ppo":
                     s = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
                     probs = self.nna(s).squeeze(0).detach().numpy()
                     action = int(np.argmax(probs))

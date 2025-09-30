@@ -9,7 +9,9 @@ import random
 class DQNAgent(Common_Methods):
     def __init__(self, nn, buffer_size, batch_size, epsilon, epsilon_min=0.01, epsilon_max = 0.9, gamma=0.99, lr=1e-4) :
         super().__init__(algo="dqn")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.nn = NeuralNetwork(lr=lr)
+        self.nn.to(self.device)
         self.epsilon = epsilon  # Probabilité d'exploration initiale
         self.epsilon_min = epsilon_min  # Valeur minimale d'epsilon
         self.epsilon_max = epsilon_max  # Valeur maximale d'epsilon
@@ -39,11 +41,11 @@ class DQNAgent(Common_Methods):
         
         states, actions, rewards, next_states, dones = zip(*batch)
         
-        states = torch.tensor(np.array(states), dtype=torch.float32)
-        actions = torch.tensor(actions, dtype=torch.int64).unsqueeze(1)
-        rewards = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1)
-        next_states = torch.tensor(np.array(next_states), dtype=torch.float32)
-        dones = torch.tensor(dones, dtype=torch.float32).unsqueeze(1)
+        states = torch.tensor(np.array(states), dtype=torch.float32, device=self.device)
+        actions = torch.tensor(actions, dtype=torch.int64, device=self.device).unsqueeze(1)
+        rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device).unsqueeze(1)
+        next_states = torch.tensor(np.array(next_states), dtype=torch.float32, device=self.device)
+        dones = torch.tensor(dones, dtype=torch.float32, device=self.device).unsqueeze(1)
         
         Q_values = self.nn(states).gather(1, actions) # self.nn(states) récupère les Qvalues associés à chaque choix (0 ou 1), ensuite le gather(1, actions) choisi la Qvalues par rapport à l'action choisie
         

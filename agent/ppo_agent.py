@@ -8,8 +8,11 @@ import random
 class PPOAgent(Common_Methods):
     def __init__(self, buffer_size=512, batch_size=64, nb_epochs=4, input_dim=4, hidden_dim=128, actor_lr=1e-3, critic_lr=1e-3, gamma=0.99, clip_value=0.2, lambda_gae=0.95, entropy_bonus=False, shuffle=True):
         super().__init__(algo="ppo")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.nna = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=2, mode="actor", lr=actor_lr)
         self.nnc = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=1, mode="critic", lr=critic_lr)
+        self.nna.to(self.device)
+        self.nnc.to(self.device)
         self.loss_fct = torch.nn.MSELoss()
         self.buffer_size = buffer_size
         self.batch_size = batch_size
@@ -25,7 +28,7 @@ class PPOAgent(Common_Methods):
         
     @torch.no_grad() # We don't want to compute gradients when selecting actions, because we are not training
     def getaction_ppo(self, state):
-        state = torch.FloatTensor(state).unsqueeze(0)
+        state = torch.as_tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
         probs = self.nna(state)
         dist = torch.distributions.Categorical(probs)
         action = dist.sample()
@@ -38,10 +41,10 @@ class PPOAgent(Common_Methods):
         
     def compute_gae(self, rewards, values, dones, next_value):
         T = len(rewards)
-        advantages = torch.zeros(T, dtype=torch.float32)
+        advantages = torch.zeros(T, dtype=torch.float32, device=self.device)
         
         gae = 0.0
-        values = torch.cat((values, torch.tensor([next_value], dtype=torch.float32)))
+        values = torch.cat((values, torch.tensor([next_value], dtype=torch.float32, device=self.device)))
         
         for t in reversed(range(T)):
             delta = rewards[t] + self.gamma * values[t + 1] * (1 - dones[t]) - values[t]
@@ -56,14 +59,14 @@ class PPOAgent(Common_Methods):
     def learn_ppo(self, last_state):        
         states, actions, rewards, dones, old_log_probs, values = zip(*self.memory) # Learning on a complete rollout
 
-        states = torch.tensor(np.array(states), dtype=torch.float32)
-        actions = torch.tensor(actions, dtype=torch.int64)
-        rewards = torch.tensor(rewards, dtype=torch.float32)
-        dones = torch.tensor(dones, dtype=torch.float32) # unsqueeze not needed, already 1D for the compute_gae, dones and rewards are not used in the loss directly
-        old_log_probs = torch.stack(old_log_probs)
-        values = torch.stack(values).squeeze()
+        states = torch.tensor(np.array(states), dtype=torch.float32, device=self.device)
+        actions = torch.tensor(actions, dtype=torch.int64, device=self.device)
+        rewards = torch.tensor(rewards, dtype=torch.float32, device=self.device)
+        dones = torch.tensor(dones, dtype=torch.float32, device=self.device) # unsqueeze not needed, already 1D for the compute_gae, dones and rewards are not used in the loss directly
+        old_log_probs = torch.stack(old_log_probs).to(self.device)
+        values = torch.stack(values).squeeze().to(self.device)
         
-        last_state = torch.as_tensor(last_state, dtype=torch.float32).unsqueeze(0)
+        last_state = torch.as_tensor(last_state, dtype=torch.float32, device=self.device).unsqueeze(0)
         
         with torch.no_grad():
             last_value = self.nnc(last_state).squeeze(-1)
