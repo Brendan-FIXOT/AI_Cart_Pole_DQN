@@ -88,7 +88,7 @@ if __name__ == "__main__":
             interface.episodes = int(input("How many episodes would you like to train the model for? "))
 
     elif mode == "ppo":
-        agent = PPOAgent(buffer_size=1024)
+        agent = PPOAgent(buffer_size=1024, entropy_bonus=False) # Already set to False by default (no need for cartpole)
         
         if interface.ask_load_ppo():
             try:
