@@ -126,7 +126,7 @@ class Common_Methods :
                     action = self.getaction_dqn(s)
                 elif self.algo == "a2c" or self.algo == "ppo":
                     s = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
-                    probs = self.nna(s).squeeze(0).detach().numpy()
+                    probs = self.nna(s).squeeze(0).detach().cpu().numpy()
                     action = int(np.argmax(probs))
                 
                 state, reward, done = env.step(action)

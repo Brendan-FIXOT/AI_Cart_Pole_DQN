@@ -10,12 +10,14 @@ class PPOAgent(Common_Methods):
         super().__init__(algo="ppo")
         if torch.cuda.is_available(): # CUDA NVIDIA
             self.device = torch.device("cuda")
+            print(f"CUDA device available: {torch.cuda.get_device_name(0)}")
         elif torch.backends.mps.is_available():  # MAC M1/M2/M3
             self.device = torch.device("mps")
         #elif torch.version.hip is not None:     # AMD ROCm
             #self.device = torch.device("hip") # Uniquement sur Linux
         else:
             self.device = torch.device("cpu")
+            print("No GPU available, using CPU instead.")
         self.nna = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=2, mode="actor", lr=actor_lr)
         self.nnc = NeuralNetwork(hidden_dim=hidden_dim, input_dim=input_dim, output_dim=1, mode="critic", lr=critic_lr)
         self.nna.to(self.device)
@@ -47,7 +49,6 @@ class PPOAgent(Common_Methods):
         self.memory.append((state, action, reward, done, log_prob_old, value_old))
         
     def compute_gae(self, rewards, values, dones, next_value):
-        print(self.device)
         T = len(rewards)
         advantages = torch.zeros(T, dtype=torch.float32, device=self.device)
         
